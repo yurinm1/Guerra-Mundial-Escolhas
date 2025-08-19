@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sobreviva à Segunda Guerra – Jogo de Escolhas</title>
+  <meta name="description" content="Jogo narrativo de sobrevivência ambientado na Segunda Guerra Mundial. Faça escolhas certas para chegar vivo a 1945." />
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827ee; /* gray-900 */
+      --card:#0b1222; 
+      --text:#e5e7eb; /* gray-200 */
+      --muted:#9ca3af; /* gray-400 */
+      --accent:#38bdf8; /* sky-400 */
+      --accent-2:#22c55e; /* green-500 */
+      --danger:#ef4444; /* red-500 */
+      --warning:#f59e0b; /* amber-500 */
+    }
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 70% 0%, #0b1222 0%, var(--bg) 55%, #050814 100%);
+      color:var(--text); display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .game{max-width:920px; width:100%;}
+    .shell{background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.08); border-radius:20px; box-shadow: 0 30px 60px rgba(0,0,0,0.45); overflow:hidden}
+    header{display:flex; gap:12px; align-items:center; justify-content:space-between; padding:18px 20px; background:linear-gradient(180deg, rgba(8,14,25,0.9), rgba(8,14,25,0.7)); border-bottom:1px solid rgba(255,255,255,0.06)}
+    .title{font-weight:800; letter-spacing:0.5px}
+    .badges{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.12); color:#cbd5e1}
+    .year{color:var(--accent); font-weight:700}
+    main{padding:24px}
+    .card{background:linear-gradient(180deg, rgba(13,20,35,0.9), rgba(10,17,30,0.9)); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:22px}
+    .chapter{font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--muted)}
+    h1{margin:6px 0 10px; font-size:24px}
+    .story{line-height:1.65; color:#dbeafe}
+    .choices{display:grid; gap:10px; margin-top:18px}
+    button.choice{appearance:none; border:none; border-radius:14px; padding:14px 16px; text-align:left; font-size:15px; cursor:pointer; background: #0a152a; color:var(--text); border:1px solid rgba(255,255,255,0.08);}
+    button.choice:hover{border-color:rgba(56,189,248,0.6); box-shadow:0 0 0 3px rgba(56,189,248,0.15) inset}
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-top:18px}
+    .hint{color:#cbd5e1; font-size:13px}
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{appearance:none; border:none; border-radius:12px; padding:10px 12px; font-weight:600; cursor:pointer; background:#0c1a34; color:var(--text); border:1px solid rgba(255,255,255,0.12)}
+    .btn:hover{border-color:rgba(255,255,255,0.25)}
+    .btn.primary{background:linear-gradient(90deg, #0ea5e9, #22c55e); border:none}
+    .meter{height:8px; background:#0b1328; border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,0.1)}
+    .meter>span{display:block; height:100%; background:linear-gradient(90deg, var(--accent), var(--warning)); width:0%}
+    .footer{padding:16px 20px; border-top:1px solid rgba(255,255,255,0.06); color:#cbd5e1; font-size:12px; background:linear-gradient(180deg, rgba(8,14,25,0.65), rgba(8,14,25,0.85))}
+    .end.success{border:1px solid rgba(34,197,94,0.5)}
+    .end.death{border:1px solid rgba(239,68,68,0.5)}
+    .endtitle{display:inline-flex; align-items:center; gap:8px; font-weight:800}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,0.12); color:#cbd5e1}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media (min-width:720px){
+      .layout{display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px}
+    }
+  </style>
+</head>
+<body>
+  <div class="game">
+    <div class="shell">
+      <header>
+        <div>
+          <div class="title">Sobreviva à Segunda Guerra</div>
+          <div class="badges">
+            <span class="badge">Jogo narrativo de escolhas</span>
+            <span class="badge">Tome decisões para viver até <strong>1945</strong></span>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge"><strong>Ano:</strong> <span id="year" class="year">1942</span></span>
+          <span class="badge"><strong>Capítulo:</strong> <span id="chapter">1</span></span>
+          <span class="badge"><strong>Risco:</strong> <span id="risk">0%</span></span>
+        </div>
+      </header>
+
+      <main>
+        <div class="layout">
+          <section class="card" id="card">
+            <div class="chapter" id="chapterLabel">Capítulo 1</div>
+            <h1 id="title">A Patrulha</h1>
+            <p class="story" id="story"></p>
+            <div class="choices" id="choices"></div>
+            <div class="row">
+              <div class="hint" id="hint"></div>
+              <div class="actions">
+                <button class="btn" id="backBtn" title="Voltar uma cena" aria-label="Voltar cena">⟵ Voltar</button>
+                <button class="btn" id="restartBtn" title="Recomeçar" aria-label="Recomeçar">⟲ Recomeçar</button>
+                <button class="btn" id="shareBtn" title="Copiar link do jogo" aria-label="Copiar link">🔗 Copiar link</button>
+              </div>
+            </div>
+            <div class="meter" aria-hidden="true" style="margin-top:12px"><span id="riskBar"></span></div>
+          </section>
+
+          <aside class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+              <div class="pill">🎯 Objetivo: sobreviver até 1945</div>
+              <div class="pill">⏳ Decisões alteram o risco</div>
+            </div>
+            <ul style="margin:14px 0 0; padding-left:18px; line-height:1.7; color:#d1d5db">
+              <li>Contexto histórico real; personagens e eventos são fictícios.</li>
+              <li>Não há glorificação de regimes ou violência.</li>
+              <li>Escolhas <em>arriscadas</em> aumentam a chance de morte imediata.</li>
+              <li>Você pode voltar uma cena para tentar outro caminho.</li>
+            </ul>
+            <div style="margin-top:14px; font-size:12px; color:#9ca3af">Sugestão: jogue com som desligado; este é um jogo de leitura e estratégia.</div>
+          </aside>
+        </div>
+      </main>
+
+      <div class="footer">
+        Feito com HTML + JavaScript. Para publicar, hospede este arquivo em Netlify, Vercel ou GitHub Pages. Conteúdo educativo sobre tomada de decisões em contexto de guerra.
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Pequeno motor de narrativa
+  const state = { year: 1942, risk: 0, chapter: 1, history: [] };
+
+  /** Cada nó é uma cena.\n   *  id: identificador único\n   *  title, text, hint: conteúdo da cena\n   *  yearDelta: altera o ano (opcional)\n   *  riskDelta: altera o risco acumulado (opcional)\n   *  end: { type: 'death'|'survive', label?: string } para finais\n   */
+  const NODES = [
+    {
+      id: 'start',
+      title: 'A Patrulha',
+      text: 'Noite, 1942. Você é um civil de 18 anos numa cidade ocupada. Uma patrulha alemã revista pessoas na rua principal. O toque de recolher está próximo.',
+      hint: 'Evitar atenção costuma ser mais seguro do que confrontar.',
+      choices: [
+        { label: 'Seguir andando normalmente, sem contato visual.', to: 'normal', riskDelta: 4 },
+        { label: 'Cortar caminho por um beco escuro.', to: 'alley', riskDelta: 8 },
+        { label: 'Enfrentar os soldados e correr.', to: 'confront', riskDelta: 40 },
+      ],
+    },
+    {
+      id: 'confront',
+      title: 'Tiroteio',
+      text: 'Você tenta correr. Os soldados gritam. Disparos ecoam. Você cai antes da esquina.',
+      end: { type: 'death', label: 'Morto em 1942 por confronto direto.'},
+      hint: 'Confronto raramente é um bom começo.'
+    },
+    {
+      id: 'normal',
+      title: 'Documentos, por favor',
+      text: 'A patrulha pede seus documentos. Você está nervoso, mas seu registro é legítimo.',
+      choices: [
+        { label: 'Responder curto e calmo, dizer que está voltando para casa.', to: 'calmPass', riskDelta: 0 },
+        { label: 'Mentir que está a trabalho noturno.', to: 'lieNight', riskDelta: 8 },
+        { label: 'Correr assim que o soldado distrair-se.', to: 'runShot', riskDelta: 25 },
+      ],
+    },
+    { id:'runShot', title:'Corre... e cai', text:'Você corre. Um disparo. Você não chega à próxima rua.', end:{type:'death', label:'Morto ao tentar fugir de revista.'}},
+    {
+      id:'calmPass',
+      title:'Siga',
+      text:'O soldado examina, devolve os papéis e manda você seguir. Você chega ao quarteirão da sua casa.',
+      choices:[
+        { label:'Entrar rápido pela porta dos fundos.', to:'homeBack', riskDelta: 2 },
+        { label:'Dar a volta para checar se está sendo seguido.', to:'tailCheck', riskDelta: 6 },
+      ]
+    },
+    { id:'lieNight', title:'Inconsistência', text:'O soldado faz perguntas sobre o tal "trabalho noturno". As respostas não batem.', choices:[
+      { label:'Confessar nervosismo e pedir desculpas.', to:'calmPass', riskDelta: 6 },
+      { label:'Insistir na mentira.', to:'detained42', riskDelta: 14 },
+    ]},
+    { id:'detained42', title:'Detido', text:'Você é levado para averiguação. Sem contatos e sem álibi, permanece preso.', end:{type:'death', label:'Desaparecido em 1942 após detenção.'}},
+
+    { id:'alley', title:'Beco e Sussurros', text:'No beco, luzes fracas. Uma senhora sussurra da janela: "Entre pelo porão!" Também há uma padaria com a porta semiaberta.', choices:[
+      { label:'Entrar no porão da vizinha.', to:'cellar', riskDelta: 4 },
+      { label:'Ir até a padaria e pedir abrigo.', to:'bakery', riskDelta: 7 },
+      { label:'Cortar pelo pátio e sair no outro quarteirão.', to:'courtyard', riskDelta: 12 },
+    ]},
+    { id:'cellar', title:'Porão Seguro', text:'A vizinha esconde você entre sacas de batata. Ela cochicha: "Amanhã alguém da resistência passará por aqui."', choices:[
+      { label:'Aceitar falar com a resistência.', to:'meetRes', riskDelta: 4 },
+      { label:'Agradecer e ir embora ao amanhecer.', to:'goHome', riskDelta: 3 },
+    ]},
+    { id:'bakery', title:'O Padeiro', text:'O padeiro hesita, mas deixa você no estoque. De madrugada, batidas na porta: inspeção.', choices:[
+      { label:'Esconder-se no forno desativado.', to:'ovenHide', riskDelta: 10 },
+      { label:'Sair pelos fundos agora.', to:'backExit', riskDelta: 12 },
+    ]},
+    { id:'ovenHide', title:'Esconderijo improvável', text:'Você se espreme no forno frio; os soldados não procuram ali. Ao amanhecer, o padeiro lhe entrega um bilhete com um endereço.', choices:[
+      { label:'Ir ao endereço (contato da resistência).', to:'meetRes', riskDelta: 6 },
+      { label:'Ignorar e voltar para casa.', to:'goHome', riskDelta: 2 },
+    ]},
+    { id:'backExit', title:'Flagrado', text:'Você dá de cara com dois soldados nos fundos.', end:{type:'death', label:'Baleado ao tentar escapar pela saída dos fundos.'}},
+    { id:'courtyard', title:'Luz do Holofote', text:'O pátio abre para uma área vigiada. Um holofote o pega.', end:{type:'death', label:'Alvejado em área aberta no pátio.'}},
+
+    { id:'goHome', title:'Casa, por enquanto', text:'Você volta para casa e mantém rotina discreta. 1943 se aproxima, a cidade está mais tensa.', yearDelta:1, choices:[
+      { label:'Ajudar discretamente vizinhos com comida e abrigo.', to:'aidNeighbors', riskDelta: 5 },
+      { label:'Evitar qualquer envolvimento, foco em sobreviver.', to:'lowProfile', riskDelta: 0 },
+    ]},
+
+    { id:'meetRes', title:'Contato da Resistência (1943)', text:'Um mensageiro entrega instruções: precisam de alguém para tarefas de baixo risco.', yearDelta:1, choices:[
+      { label:'Operar um rádio clandestino algumas noites.', to:'radioTask', riskDelta: 8 },
+      { label:'Distribuir comida e mensagens.', to:'foodTask', riskDelta: 4 },
+      { label:'Sabotar trilhos de trem.', to:'sabotageTask', riskDelta: 16 },
+    ]},
+
+    { id:'aidNeighbors', title:'Rostos Agradecidos', text:'Você compartilha comida e mantém sigilo. Boatos falam de grandes ofensivas no Leste.', choices:[
+      { label:'Continuar ajudando discretamente.', to:'foodTask', riskDelta: 3 },
+      { label:'Cortar laços e ficar invisível.', to:'lowProfile', riskDelta: 0 },
+    ]},
+
+    { id:'lowProfile', title:'Perfil Baixo', text:'Você evita riscos. 1944 chega com bombardeios frequentes.', yearDelta:1, choices:[
+      { label:'Usar abrigos oficiais durante os ataques.', to:'shelterChoice', riskDelta: 2 },
+      { label:'Ficar em casa durante bombardeios.', to:'homeBomb', riskDelta: 15 },
+    ]},
+
+    { id:'radioTask', title:'Chiados na Noite', text:'O rádio transmite mensagens codificadas. Um vizinho curioso nota luzes tarde da noite.', choices:[
+      { label:'Tampar janelas e continuar.', to:'radioSafe', riskDelta: 6 },
+      { label:'Encerrar a operação imediatamente.', to:'layLow44', riskDelta: 2 },
+      { label:'Mudar o rádio para outro apartamento.', to:'moveRadio', riskDelta: 10 },
+    ]},
+    { id:'radioSafe', title:'Disciplina', text:'Você reforça o isolamento de luz e reduz transmissões. Passa ileso por inspeções. (1944)', yearDelta:1, choices:[
+      { label:'Continuar no rádio com rigor.', to:'hold44', riskDelta: 6 },
+      { label:'Migrar para tarefas de entrega.', to:'foodTask', riskDelta: 3 },
+    ]},
+    { id:'moveRadio', title:'Dedurado', text:'O vizinho fala demais. A polícia chega antes da mudança.', end:{type:'death', label:'Preso por operação de rádio descoberta.'}},
+
+    { id:'foodTask', title:'Entrega Silenciosa (1943→1944)', text:'Você leva bilhetes, pão e remédios entre casas. Aprende rotas seguras.', yearDelta:1, choices:[
+      { label:'Manter rotas curtas e horários variados.', to:'routesSafe', riskDelta: 3 },
+      { label:'Aumentar a rede para mais bairros.', to:'routesWide', riskDelta: 10 },
+    ]},
+    { id:'routesSafe', title:'Risco Controlado', text:'Você evita padrões e mantém discrição. A frente ocidental se aproxima. (1944)', choices:[
+      { label:'Buscar abrigo organizado durante bombardeios.', to:'shelterChoice', riskDelta: 2 },
+      { label:'Ajudar um esconderijo de famílias.', to:'hideFamilies', riskDelta: 9 },
+    ]},
+    { id:'routesWide', title:'Padrões Notados', text:'Patrulhas percebem seus caminhos repetidos.', end:{type:'death', label:'Capturado em 1944 por patrulha após rotas previsíveis.'}},
+
+    { id:'sabotageTask', title:'Explosivos no Trilho', text:'A equipe precisa sabotar um trecho de ferrovia. O risco é extremo.', choices:[
+      { label:'Recusar e optar por apoio logístico.', to:'foodTask', riskDelta: 0 },
+      { label:'Aceitar a missão.', to:'sabotageGo', riskDelta: 25 },
+    ]},
+    { id:'sabotageGo', title:'Luz na Colina', text:'Noite gelada. Um clarão denuncia o grupo antes do tempo.', end:{type:'death', label:'Morto em 1943 durante sabotagem malsucedida.'}},
+
+    { id:'hideFamilies', title:'Silêncio Absoluto', text:'Você ajuda a esconder famílias perseguidas em um porão falso.', choices:[
+      { label:'Rotina rígida: horários, ração, silêncio.', to:'hideDiscipline', riskDelta: 7 },
+      { label:'Permitir visitas esporádicas de parentes.', to:'hideLoose', riskDelta: 12 },
+    ]},
+    { id:'hideDiscipline', title:'Disciplina Salva', text:'Meses tensos, mas ninguém é descoberto. (1944→1945)', yearDelta:1, choices:[
+      { label:'Com avanço aliado, decidir: ficar ou evacuar?', to:'frontChoice', riskDelta: 4 },
+    ]},
+    { id:'hideLoose', title:'Um Sussurro a Mais', text:'Uma visita inoportuna resulta em denúncia.', end:{type:'death', label:'Todos capturados após quebra de sigilo.'}},
+
+    { id:'shelterChoice', title:'Alarme Aéreo (1944)', text:'Sirene. Você precisa de abrigo.', choices:[
+      { label:'Abrigo na igreja reforçada.', to:'churchShelter', riskDelta: 3 },
+      { label:'Refúgio no metrô.', to:'subwayShelter', riskDelta: 5 },
+      { label:'Ficar em casa.', to:'homeBomb', riskDelta: 15 },
+    ]},
+    { id:'churchShelter', title:'Nave de Pedra', text:'A igreja tem reforço contra estilhaços. Você passa por noites difíceis, mas vivo.', choices:[
+      { label:'Aguardar notícias de libertação.', to:'frontChoice', riskDelta: 2 },
+    ]},
+    { id:'subwayShelter', title:'Lotado, porém seguro', text:'O metrô abriga centenas. Falta ar, mas é protegido.', choices:[
+      { label:'Permanecer no metrô nas noites críticas.', to:'frontChoice', riskDelta: 4 },
+    ]},
+    { id:'homeBomb', title:'Telhado Frágil', text:'Um impacto próximo derruba a estrutura.', end:{type:'death', label:'Morto em bombardeio ao permanecer em casa.'}},
+
+    { id:'hold44', title:'1944 em Diante', text:'Você mantém rotina cautelosa até os rumores de retirada.', choices:[
+      { label:'Planejar evacuação para o interior.', to:'frontChoice', riskDelta: 3 },
+    ]},
+
+    { id:'frontChoice', title:'1945 – A Frente se Aproxima', text:'Unidades recuam, tiros ao longe. É hora de decidir o último passo.', yearDelta: 1, choices:[
+      { label:'Ficar na cidade e aguardar a libertação.', to:'stayLiberation', riskDelta: 5 },
+      { label:'Tentar evacuar para o interior com um grupo pequeno.', to:'evacuate', riskDelta: 9 },
+    ]},
+
+    { id:'stayLiberation', title:'Libertação', text:'Dias de tensão. Tropas aliadas entram; você se mantém fora de zonas de combate.', end:{type:'survive', label:'Sobreviveu até 1945 mantendo perfil prudente.'}},
+    { id:'evacuate', title:'Estrada Incerta', text:'Na estrada, há saques e checkpoints. Seu grupo evita rotas principais e viaja à noite.', choices:[
+      { label:'Evitar pontes e colunas militares, mesmo com demora.', to:'longSafe', riskDelta: 4 },
+      { label:'Aproveitar um comboio civil grande para passar despercebido.', to:'convoy', riskDelta: 8 },
+    ]},
+    { id:'longSafe', title:'Interior Alcançado', text:'Vocês chegam ao interior e aguardam notícias. A guerra termina pouco depois.', end:{type:'survive', label:'Sobreviveu ao evacuar com cautela.'}},
+    { id:'convoy', title:'Comboio Emboscado', text:'O comboio chama atenção e vira alvo em estrada estreita.', end:{type:'death', label:'Morto em emboscada na evacuação.'}},
+  ];
+
+  const nodeById = id => NODES.find(n => n.id === id);
+
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function setYear(delta){ if(typeof delta === 'number'){ state.year = clamp(state.year + delta, 1942, 1945); }}
+  function setRisk(delta){ if(typeof delta === 'number'){ state.risk = clamp(state.risk + delta, 0, 100); }}
+  function setChapter(n){ state.chapter = n; }
+
+  function renderNode(id){
+    const node = nodeById(id) || nodeById('start');
+    state.history.push(id);
+    if(node.yearDelta) setYear(node.yearDelta);
+
+    // UI binds
+    document.getElementById('year').textContent = state.year;
+    document.getElementById('chapter').textContent = state.chapter;
+    document.getElementById('risk').textContent = state.risk + '%';
+    document.getElementById('riskBar').style.width = state.risk + '%';
+
+    const card = document.getElementById('card');
+    card.classList.remove('end','success','death');
+
+    document.getElementById('chapterLabel').textContent = 'Capítulo ' + state.chapter;
+    document.getElementById('title').textContent = node.title;
+    document.getElementById('story').textContent = node.text;
+
+    const hint = document.getElementById('hint');
+    const choices = document.getElementById('choices');
+    choices.innerHTML = '';
+
+    // Finais
+    if(node.end){
+      const type = node.end.type;
+      card.classList.add('end', type === 'survive' ? 'success' : 'death');
+      hint.innerHTML = `<span class="pill">${type === 'survive' ? '✅ Sobreviveu' : '☠ Você morreu'}</span> <span class="pill">${node.end.label}</span>`;
+
+      const restart = document.createElement('button');
+      restart.className = 'choice';
+      restart.textContent = '▶ Recomeçar do início';
+      restart.onclick = () => restartGame();
+      choices.appendChild(restart);
+
+      if(type === 'survive'){
+        const share = document.createElement('button');
+        share.className = 'choice';
+        share.textContent = '🔄 Jogar outra rota (capítulo 1)';
+        share.onclick = () => restartGame();
+        choices.appendChild(share);
+      }
+      return;
+    }
+
+    // Cena normal com escolhas
+    hint.textContent = node.hint || '';
+    (node.choices||[]).forEach((c, idx) => {
+      const b = document.createElement('button');
+      b.className = 'choice';
+      b.textContent = `${String.fromCharCode(65+idx)}) ${c.label}`;
+      b.onclick = () => {
+        if(typeof c.riskDelta === 'number') setRisk(c.riskDelta);
+        setChapter(state.chapter + 1);
+        renderNode(c.to);
+      };
+      choices.appendChild(b);
+    });
+  }
+
+  function restartGame(){
+    state.year = 1942; state.risk = 0; state.chapter = 1; state.history = [];
+    renderNode('start');
+  }
+
+  function goBack(){
+    if(state.history.length <= 1) return; // nada a voltar
+    // Remover cena atual
+    state.history.pop();
+    // Voltar sem recontar capítulo/risco/ano com precisão complexa.
+    // Para simplicidade e justiça, reiniciamos do começo e reproduzimos até a cena anterior.
+    const path = [...state.history];
+    state.year = 1942; state.risk = 0; state.chapter = 1; state.history = [];
+    let current = 'start';
+    renderNode(current);
+    for(let i=1;i<path.length;i++){
+      const prev = nodeById(path[i-1]);
+      const nextId = path[i];
+      const choice = (prev.choices||[]).find(ch => ch.to===nextId);
+      if(choice){ setRisk(choice.riskDelta||0); setChapter(state.chapter + 1); renderNode(nextId); }
+    }
+  }
+
+  function copyLink(){
+    const url = location.href;
+    navigator.clipboard?.writeText(url).then(()=>{
+      const hint = document.getElementById('hint');
+      const before = hint.textContent;
+      hint.textContent = 'Link copiado! Cole para compartilhar.';
+      setTimeout(()=>{ hint.textContent = before; }, 1600);
+    });
+  }
+
+  document.getElementById('restartBtn').addEventListener('click', restartGame);
+  document.getElementById('backBtn').addEventListener('click', goBack);
+  document.getElementById('shareBtn').addEventListener('click', copyLink);
+
+  // Inicia o jogo
+  renderNode('start');
+  </script>
+</body>
+</html>
